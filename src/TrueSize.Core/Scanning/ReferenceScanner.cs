@@ -25,6 +25,12 @@ public sealed class ReferenceScanner : IVolumeScanner
         }
 
         var volume = VolumeInfo.FromPath(root);
+
+        // Elevated: backup semantics + SeBackupPrivilege read every directory regardless of ACLs (same view as the MFT).
+        if (Elevation.IsProcessElevated())
+        {
+            Privileges.TryEnableBackupPrivilege();
+        }
         var builder = new ScanTreeBuilder();
         var errors = new List<ScanError>();
         using var reader = new DirectoryReader(options.DirectoryBufferSize);
@@ -139,7 +145,7 @@ public sealed class ReferenceScanner : IVolumeScanner
 
         if (EntryClassifier.NeedsCompressedSize(e.Flags))
         {
-            if (!FileQueries.TryGetCompressedSize(handle, out long compressed, out error))
+            if (!FileQueries.TryGetCompressedAllocation(handle, e.Size, out long compressed, out error))
             {
                 return;
             }

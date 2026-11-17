@@ -26,6 +26,12 @@ public sealed class DirectoryScanner : IVolumeScanner
         }
 
         var volume = VolumeInfo.FromPath(root);
+
+        // Elevated: backup semantics + SeBackupPrivilege read every directory regardless of ACLs (same view as the MFT).
+        if (Elevation.IsProcessElevated())
+        {
+            Privileges.TryEnableBackupPrivilege();
+        }
         var run = new Run(options, progress ?? new ScanProgress(), cancellationToken);
         int rootNode = run.Builder.AddRoot(root, default);
         run.Execute(new WorkItem(rootNode, root, IsRoot: true));
@@ -249,6 +255,8 @@ public sealed class DirectoryScanner : IVolumeScanner
                     {
                         needStandard = options.ResolveLinkCounts || IsUnderAllocated(e);
                     }
+
+                    needStandard |= EntryClassifier.NeedsStandardInfo(e.Flags);
                 }
 
                 bool needCompressed = EntryClassifier.NeedsCompressedSize(e.Flags);
@@ -269,7 +277,7 @@ public sealed class DirectoryScanner : IVolumeScanner
                             Apply(ref e, isDirectory, std.AllocationSize, std.EndOfFile, std.NumberOfLinks);
                         }
 
-                        if (needCompressed && FileQueries.TryGetCompressedSize(handle, out long compressed, out error))
+                        if (needCompressed && FileQueries.TryGetCompressedAllocation(handle, e.Size, out long compressed, out error))
                         {
                             e.Allocated = compressed;
                         }

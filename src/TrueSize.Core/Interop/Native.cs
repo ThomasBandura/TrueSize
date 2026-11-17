@@ -25,6 +25,7 @@ internal static unsafe partial class Native
     // WinBase.h
     public const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
     public const uint FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
+    public const uint FILE_FLAG_NO_BUFFERING = 0x20000000;
 
     // winnt.h file attributes
     public const uint FILE_ATTRIBUTE_DIRECTORY = 0x00000010;
@@ -69,6 +70,19 @@ internal static unsafe partial class Native
 
     public static readonly uint FSCTL_SET_COMPRESSION = CtlCode(FILE_DEVICE_FILE_SYSTEM, 16, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA);
     public static readonly uint FSCTL_SET_SPARSE = CtlCode(FILE_DEVICE_FILE_SYSTEM, 49, METHOD_BUFFERED, FILE_SPECIAL_ACCESS);
+    public static readonly uint FSCTL_GET_NTFS_VOLUME_DATA = CtlCode(FILE_DEVICE_FILE_SYSTEM, 25, METHOD_BUFFERED, FILE_ANY_ACCESS);
+
+    // winnt.h
+    public const uint GENERIC_READ = 0x80000000;
+
+    /// <summary>fileapi.h ReadFile. With a synchronous handle and an OVERLAPPED offset it reads at that offset and blocks.</summary>
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool ReadFile(SafeFileHandle file, void* buffer, uint numberOfBytesToRead, out uint numberOfBytesRead, OVERLAPPED* overlapped);
+
+    [LibraryImport("kernel32.dll", EntryPoint = "GetVolumeNameForVolumeMountPointW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetVolumeNameForVolumeMountPoint(string volumeMountPoint, char* volumeName, uint bufferLength);
 
     // winnt.h
     public const ushort COMPRESSION_FORMAT_DEFAULT = 0x0001;
@@ -118,6 +132,7 @@ internal enum FileInfoByHandleClass
     FileStandardInfo = 1,
     FileStreamInfo = 7,
     FileCompressionInfo = 8,
+    FileIdInfo = 18,
     FileIdExtdDirectoryInfo = 19,
     FileIdExtdDirectoryRestartInfo = 20,
 }
@@ -155,6 +170,45 @@ internal struct FILE_ID_128
 {
     public ulong Low;
     public ulong High;
+}
+
+/// <summary>minwinbase.h OVERLAPPED (the Offset/OffsetHigh member of the union).</summary>
+[StructLayout(LayoutKind.Sequential)]
+internal struct OVERLAPPED
+{
+    public nuint Internal;
+    public nuint InternalHigh;
+    public uint Offset;
+    public uint OffsetHigh;
+    public nint hEvent;
+}
+
+/// <summary>WinBase.h FILE_ID_INFO.</summary>
+[StructLayout(LayoutKind.Sequential)]
+internal struct FILE_ID_INFO
+{
+    public ulong VolumeSerialNumber;
+    public FILE_ID_128 FileId;
+}
+
+/// <summary>winioctl.h NTFS_VOLUME_DATA_BUFFER (output of FSCTL_GET_NTFS_VOLUME_DATA).</summary>
+[StructLayout(LayoutKind.Sequential)]
+internal struct NTFS_VOLUME_DATA_BUFFER
+{
+    public long VolumeSerialNumber;
+    public long NumberSectors;
+    public long TotalClusters;
+    public long FreeClusters;
+    public long TotalReserved;
+    public uint BytesPerSector;
+    public uint BytesPerCluster;
+    public uint BytesPerFileRecordSegment;
+    public uint ClustersPerFileRecordSegment;
+    public long MftValidDataLength;
+    public long MftStartLcn;
+    public long Mft2StartLcn;
+    public long MftZoneStart;
+    public long MftZoneEnd;
 }
 
 /// <summary>WinBase.h FILE_STANDARD_INFO.</summary>

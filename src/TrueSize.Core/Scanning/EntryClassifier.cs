@@ -83,9 +83,18 @@ internal static class EntryClassifier
         (flags & NodeFlags.NotFollowed) != 0 ||
         ((flags & NodeFlags.CloudNotPopulated) != 0 && !options.EnumerateCloudDirectories);
 
-    /// <summary>Files whose real allocation differs from the directory entry and requires FileCompressionInfo.</summary>
+    /// <summary>
+    /// Files whose real allocation is FileCompressionInfo.CompressedFileSize: NTFS-compressed, WOF and dedup files.
+    /// Not sparse files: for a mostly allocated sparse file CompressedFileSize returns the logical size (measured:
+    /// 440736 for 458752 allocated bytes), while FileStandardInfo.AllocationSize matches the clusters in use.
+    /// </summary>
     public static bool NeedsCompressedSize(NodeFlags flags) =>
-        (flags & (NodeFlags.Sparse | NodeFlags.Compressed | NodeFlags.Wof | NodeFlags.Dedup)) != 0 &&
+        (flags & (NodeFlags.Compressed | NodeFlags.Wof | NodeFlags.Dedup)) != 0 &&
+        (flags & (NodeFlags.Directory | NodeFlags.CloudPlaceholder)) == 0;
+
+    /// <summary>Sparse files: the directory entry allocation may be stale, FileStandardInfo via a handle is exact.</summary>
+    public static bool NeedsStandardInfo(NodeFlags flags) =>
+        (flags & NodeFlags.Sparse) != 0 && !NeedsCompressedSize(flags) &&
         (flags & (NodeFlags.Directory | NodeFlags.CloudPlaceholder)) == 0;
 
     /// <summary>Cloud placeholders are never opened to avoid any provider interaction.</summary>

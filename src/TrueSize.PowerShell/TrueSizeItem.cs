@@ -41,7 +41,7 @@ public sealed class TrueSizeItem
 
     public required NodeFlags Flags { get; init; }
 
-    /// <summary>Short markers: D dir, J junction, L symlink, H hard link, X links outside, C cloud, S sparse, Z compressed, A ADS, ! access error.</summary>
+    /// <summary>Short markers: D dir, J junction, L symlink, H hard link, X links outside, C cloud, S sparse, Z compressed, A ADS, ? reparse tag unknown, ! access error.</summary>
     public string Markers => GetMarkers(Flags);
 
     public override string ToString() => FullName;
@@ -57,6 +57,7 @@ public sealed class TrueSizeItem
         Add('S', NodeFlags.Sparse);
         Add('Z', NodeFlags.Compressed | NodeFlags.Wof);
         Add('A', NodeFlags.AlternateStreams);
+        Add('?', NodeFlags.ReparseTagUnknown);
         Add('!', NodeFlags.AccessDenied | NodeFlags.Error);
         return sb.ToString();
 

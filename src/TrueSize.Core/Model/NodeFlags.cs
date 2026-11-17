@@ -37,4 +37,10 @@ public enum NodeFlags : uint
     LinkCountUnknown = 1u << 18,
     Offline = 1u << 19,
     Encrypted = 1u << 20,
+
+    /// <summary>
+    /// Reparse point whose tag was not read (MFT scanner, nonresident reparse data, ScanOptions.ResolveAllReparseTags off).
+    /// Sizes are unaffected; only tag-derived flags such as Symlink or CloudPlaceholder may be missing.
+    /// </summary>
+    ReparseTagUnknown = 1u << 21,
 }

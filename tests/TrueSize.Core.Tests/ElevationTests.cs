@@ -15,11 +15,30 @@ public sealed class ElevationTests
     }
 
     [Fact]
-    public void Selector_FallsBackToDirectoryScanner_UntilFastScannersExist()
+    public void Selector_PicksMftScannerOnlyWhenElevatedOnNtfs()
     {
         var choice = ScannerSelector.Select(Path.GetTempPath());
+        Assert.Equal("NTFS", choice.Volume.FileSystem);
+        if (ScannerSelector.IsElevated())
+        {
+            Assert.IsType<NtfsMftScanner>(choice.Scanner);
+            Assert.True(choice.IsFastPath);
+        }
+        else
+        {
+            Assert.IsType<DirectoryScanner>(choice.Scanner);
+            Assert.False(choice.IsFastPath);
+        }
+    }
+
+    [Fact]
+    public void Selector_UsesDirectoryScannerOnReFS_UntilPhase4()
+    {
+        string refsPath = AppContext.BaseDirectory;
+        if (VolumeInfo.FromPath(refsPath).FileSystem != "ReFS") return;
+
+        var choice = ScannerSelector.Select(refsPath);
         Assert.IsType<DirectoryScanner>(choice.Scanner);
         Assert.False(choice.IsFastPath);
-        Assert.Equal("NTFS", choice.Volume.FileSystem);
     }
 }

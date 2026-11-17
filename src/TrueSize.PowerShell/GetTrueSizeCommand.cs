@@ -57,6 +57,13 @@ public sealed class GetTrueSizeCommand : PSCmdlet
     [Parameter]
     public SwitchParameter SkipLinkCounts { get; set; }
 
+    /// <summary>
+    /// MFT scanner only: also read reparse tags stored outside the MFT record (slow for Windows container placeholders).
+    /// Without it such files are marked '?' (tag unknown); sizes are unaffected.
+    /// </summary>
+    [Parameter]
+    public SwitchParameter ResolveAllReparseTags { get; set; }
+
     /// <summary>Maximum number of directories scanned in parallel. 0 = number of processors.</summary>
     [Parameter]
     [ValidateRange(0, 1024)]
@@ -84,17 +91,30 @@ public sealed class GetTrueSizeCommand : PSCmdlet
             HardlinkMode = HardlinkMode,
             IncludeAlternateStreams = IncludeAlternateStreams,
             ResolveLinkCounts = !SkipLinkCounts,
+            ResolveAllReparseTags = ResolveAllReparseTags,
             MaxParallelism = ThrottleLimit,
         };
 
-        var result = RunScan(choice.Scanner, root, options);
+        IVolumeScanner scanner = choice.Scanner;
+        ScanResult? result;
+        try
+        {
+            result = RunScan(scanner, root, options);
+        }
+        catch (Exception ex) when (choice.IsFastPath && ex is IOException or InvalidDataException or NotSupportedException or System.ComponentModel.Win32Exception or UnauthorizedAccessException)
+        {
+            WriteWarning($"{scanner.Name} scanner failed ({ex.Message}); falling back to the directory scanner.");
+            scanner = new DirectoryScanner();
+            result = RunScan(scanner, root, options);
+        }
+
         if (result is null)
         {
             return;
         }
 
         ReportErrors(result);
-        WriteVerbose($"{choice.Scanner.Name} scanner, {choice.Volume.FileSystem}: {result.Tree.GetFileCount(ScanTree.Root):N0} files, " +
+        WriteVerbose($"{scanner.Name} scanner, {choice.Volume.FileSystem}: {result.Tree.GetFileCount(ScanTree.Root):N0} files, " +
                      $"{result.Tree.GetDirectoryCount(ScanTree.Root):N0} directories in {result.Duration.TotalSeconds:F2} s.");
 
         if (Raw)
@@ -151,7 +171,9 @@ public sealed class GetTrueSizeCommand : PSCmdlet
         var task = Task.Run(() => scanner.Scan(root, options, progress, cancellation.Token));
         try
         {
-            while (!task.Wait(250))
+            // Poll without Task.Wait: it wraps scanner exceptions in AggregateException, which would hide their type
+            // from the fallback filter in ProcessRecord. GetResult() below rethrows the original exception.
+            while (!((IAsyncResult)task).AsyncWaitHandle.WaitOne(250))
             {
                 record.StatusDescription =
                     $"{progress.Files:N0} files, {progress.Directories:N0} directories, {SizeFormatter.Format(progress.AllocatedBytes)}";

@@ -112,6 +112,26 @@ internal static unsafe class FileQueries
         return false;
     }
 
+    /// <summary>
+    /// Allocation of a compressed/WOF/dedup file. CompressedFileSize is the allocated size but capped at the logical size
+    /// (measured: a 12-byte compressed file reports 12, a 960-byte one 960, while 16 resp. 4096 bytes are allocated).
+    /// When the cap is hit, FileStandardInfo.AllocationSize is used instead.
+    /// </summary>
+    public static bool TryGetCompressedAllocation(SafeFileHandle handle, long endOfFile, out long allocated, out int error)
+    {
+        if (!TryGetCompressedSize(handle, out allocated, out error))
+        {
+            return false;
+        }
+
+        if (allocated >= endOfFile && TryGetStandardInfo(handle, out var std, out error))
+        {
+            allocated = std.AllocationSize;
+        }
+
+        return true;
+    }
+
     /// <summary>Sums all $DATA streams. <paramref name="buffer"/> grows as needed and can be reused.</summary>
     public static bool TryGetStreams(SafeFileHandle handle, ref byte[] buffer, out StreamTotals totals, out int error)
     {

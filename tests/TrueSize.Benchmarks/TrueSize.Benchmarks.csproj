@@ -1,10 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- BenchmarkDotNet suite is added in phase 3. Phase 1: quick timing tool. -->
+  <!--
+    Release build only. Usage: TrueSize.Benchmarks [path] [option]
+      option "reference"     quick timing of all scanners including the reference scanner (prefix options with two dashes)
+      option "mft-profile"   MFT phase timings (elevated)
+      option "bdn"           BenchmarkDotNet suite (elevated for the MFT scanner)
+      no option              quick timing of all scanners
+  -->
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- BenchmarkDotNet's generated code is not warning-free under TreatWarningsAsErrors. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TrueSize.Core\TrueSize.Core.csproj" />

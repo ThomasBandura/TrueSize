@@ -31,6 +31,13 @@ public sealed record ScanOptions
     /// <summary>Enumerate cloud directories marked RECALL_ON_OPEN. May trigger network activity.</summary>
     public bool EnumerateCloudDirectories { get; init; }
 
+    /// <summary>
+    /// MFT scanner: read the reparse tag of every file and directory whose reparse data is stored outside its MFT record
+    /// (one cluster read each; ~240k Windows container placeholders on a typical C: cost ~30 s). Off: such nodes are
+    /// flagged ReparseTagUnknown. Sizes and the set of nodes do not depend on it.
+    /// </summary>
+    public bool ResolveAllReparseTags { get; init; }
+
     /// <summary>Buffer size for directory enumeration.</summary>
     public int DirectoryBufferSize { get; init; } = 64 * 1024;
 }
