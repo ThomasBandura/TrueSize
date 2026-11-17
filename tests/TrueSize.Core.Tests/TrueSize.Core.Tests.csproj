@@ -16,6 +16,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TrueSize.Core\TrueSize.Core.csproj" />
+    <!-- Build order only; tests start the helper from its own output folder. -->
+    <ProjectReference Include="..\..\src\TrueSize.ScanHelper\TrueSize.ScanHelper.csproj" ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
 
 </Project>

@@ -96,6 +96,20 @@ public sealed class ScanTree
 
     public const int Root = 0;
 
+    // Raw storage for the binary serializer (Remote.ScanTreeSerializer).
+    internal int[] RawParent => _parent;
+    internal int[] RawFirstChild => _firstChild;
+    internal int[] RawNextSibling => _nextSibling;
+    internal int[] RawNameOffset => _nameOffset;
+    internal ushort[] RawNameLength => _nameLength;
+    internal NodeFlags[] RawFlags => _flags;
+    internal long[] RawSize => _size;
+    internal long[] RawAllocated => _allocated;
+    internal FileId128[] RawFileId => _fileId;
+    internal int[] RawLinkCount => _linkCount;
+    internal char[] RawNames => _names;
+    internal Dictionary<int, uint> RawReparseTags => _reparseTags;
+
     public ScanTreeInfo Info { get; }
 
     public int Count { get; }

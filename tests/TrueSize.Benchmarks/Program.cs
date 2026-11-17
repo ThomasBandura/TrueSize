@@ -13,6 +13,25 @@ if (args.Contains("--bdn"))
     return;
 }
 
+if (args.Contains("--helper"))
+{
+    // Simulates the app: a (possibly non-elevated) process starts the helper ("runas" unless --no-elevate) and scans via the pipe.
+    int index = Array.IndexOf(args, "--helper");
+    string? helperPath = index + 1 < args.Length && !args[index + 1].StartsWith("--", StringComparison.Ordinal) ? args[index + 1] : null;
+    var swHelper = Stopwatch.StartNew();
+    using var session = TrueSize.Core.Remote.ScanHelperSession.Start(helperPath, elevate: !args.Contains("--no-elevate"));
+    Console.WriteLine($"helper started in {swHelper.ElapsedMilliseconds} ms, caller elevated={ScannerSelector.IsElevated()}, helper elevated={session.IsElevated}");
+    for (int i = 0; i < 2; i++)
+    {
+        swHelper.Restart();
+        var remote = session.Scan(path, new ScanOptions());
+        Console.WriteLine($"scan {i + 1}: {swHelper.ElapsedMilliseconds} ms total (helper scan {remote.Duration.TotalMilliseconds:F0} ms, until result {session.LastTimings.UntilResult.TotalMilliseconds:F0} ms, transfer+rebuild {session.LastTimings.Transfer.TotalMilliseconds:F0} ms), scanner={remote.Tree.Info.Scanner}, nodes={remote.Tree.Count:N0}, " +
+                          $"files={remote.Tree.GetFileCount(0):N0}, alloc={remote.Tree.GetTotalAllocated(0):N0}, errors={remote.Errors.Count}");
+    }
+
+    return;
+}
+
 if (args.Contains("--usn-probe"))
 {
     TrueSize.Benchmarks.UsnProbe.Run(path, args.Contains("--enum-only"));

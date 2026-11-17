@@ -1,5 +1,6 @@
 using System.Management.Automation;
 using TrueSize.Core.Model;
+using TrueSize.Core.Remote;
 using TrueSize.Core.Scanning;
 
 namespace TrueSize.PowerShell;
@@ -96,17 +97,29 @@ public sealed class GetTrueSizeCommand : PSCmdlet
             MaxParallelism = ThrottleLimit,
         };
 
-        IVolumeScanner scanner = choice.Scanner;
+        string scannerName = choice.Scanner.Name;
         ScanResult? result;
         try
         {
-            result = RunScan(scanner, root, options);
+            result = RunScan(choice.Scanner, root, options);
         }
         catch (Exception ex) when (choice.IsFastPath && ex is IOException or InvalidDataException or NotSupportedException or System.ComponentModel.Win32Exception or UnauthorizedAccessException)
         {
-            WriteWarning($"{scanner.Name} scanner failed ({ex.Message}); falling back to the directory scanner.");
-            scanner = new DirectoryScanner();
-            result = RunScan(scanner, root, options);
+            // NotSupported: raw volume reads are blocked in this process (packaged/Store PowerShell), while child processes
+            // can read. The elevated session starts the helper as a child, which inherits the elevation (no UAC prompt).
+            string? helperError = null;
+            if (ex is NotSupportedException && TryHelperScan(root, options, out result, out helperError))
+            {
+                scannerName = "Helper";
+                WriteVerbose($"{choice.Scanner.Name} scanner not usable in this process ({ex.Message}); the scan ran in TrueSize.ScanHelper.");
+            }
+            else
+            {
+                string reason = helperError is null ? ex.Message : $"{ex.Message}; helper: {helperError}";
+                WriteWarning($"{choice.Scanner.Name} scanner failed ({reason}); falling back to the directory scanner.");
+                scannerName = "Directory";
+                result = RunScan(new DirectoryScanner(), root, options);
+            }
         }
 
         if (result is null)
@@ -115,7 +128,7 @@ public sealed class GetTrueSizeCommand : PSCmdlet
         }
 
         ReportErrors(result);
-        WriteVerbose($"{scanner.Name} scanner, {choice.Volume.FileSystem}: {result.Tree.GetFileCount(ScanTree.Root):N0} files, " +
+        WriteVerbose($"{scannerName} scanner ({result.Tree.Info.Scanner}), {choice.Volume.FileSystem}: {result.Tree.GetFileCount(ScanTree.Root):N0} files, " +
                      $"{result.Tree.GetDirectoryCount(ScanTree.Root):N0} directories in {result.Duration.TotalSeconds:F2} s.");
         ReportSharedAllocation(result.Tree, choice.Volume);
 
@@ -225,6 +238,32 @@ public sealed class GetTrueSizeCommand : PSCmdlet
         }
 
         WriteWarning($"{result.Errors.Count:N0} item(s) could not be read and are counted with partial or zero size. Use -Verbose for details.");
+    }
+
+    /// <summary>Runs the scan in TrueSize.ScanHelper.exe from the module folder (child process, no UAC prompt).</summary>
+    private bool TryHelperScan(string root, ScanOptions options, out ScanResult? result, out string? error)
+    {
+        result = null;
+        string helper = System.IO.Path.Combine(
+            System.IO.Path.GetDirectoryName(typeof(GetTrueSizeCommand).Assembly.Location)!, "TrueSize.ScanHelper.exe");
+        if (!File.Exists(helper))
+        {
+            error = $"'{helper}' not found";
+            return false;
+        }
+
+        try
+        {
+            using var scanner = HelperScanner.StartNew(helper, elevate: false);
+            result = RunScan(scanner, root, options);
+            error = null;
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or ScanHelperException or UnauthorizedAccessException or TimeoutException or System.ComponentModel.Win32Exception)
+        {
+            error = ex.Message;
+            return false;
+        }
     }
 
     // Block cloning / deduplication cannot be attributed per file; report only what is provable at volume level.

@@ -16,7 +16,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TrueSize.Core\TrueSize.Core.csproj" />
+    <!-- Build order only: the helper executable is copied into the module folder below. -->
+    <ProjectReference Include="..\TrueSize.ScanHelper\TrueSize.ScanHelper.csproj" ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
+
+  <!-- Ship TrueSize.ScanHelper next to the module: used when raw volume reads are blocked in the PowerShell process. -->
+  <Target Name="CopyScanHelper" AfterTargets="Build">
+    <ItemGroup>
+      <ScanHelperFiles Include="..\TrueSize.ScanHelper\bin\$(Configuration)\$(TargetFramework)\TrueSize.ScanHelper.exe;..\TrueSize.ScanHelper\bin\$(Configuration)\$(TargetFramework)\TrueSize.ScanHelper.dll;..\TrueSize.ScanHelper\bin\$(Configuration)\$(TargetFramework)\TrueSize.ScanHelper.runtimeconfig.json;..\TrueSize.ScanHelper\bin\$(Configuration)\$(TargetFramework)\TrueSize.ScanHelper.deps.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ScanHelperFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
 
   <ItemGroup>
     <None Update="TrueSize.psd1" CopyToOutputDirectory="PreserveNewest" />

@@ -21,6 +21,15 @@ public sealed class ScanProgress
     }
 
     internal void AddError() => Interlocked.Increment(ref _errors);
+
+    /// <summary>Replaces all counters (progress relayed from the scan helper process).</summary>
+    internal void Set(long files, long directories, long bytes, long errors)
+    {
+        Volatile.Write(ref _files, files);
+        Volatile.Write(ref _directories, directories);
+        Volatile.Write(ref _bytes, bytes);
+        Volatile.Write(ref _errors, errors);
+    }
 }
 
 public sealed record ScanError(string Path, int Win32Error, string Operation)

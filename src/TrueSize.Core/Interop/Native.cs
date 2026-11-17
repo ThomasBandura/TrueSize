@@ -123,6 +123,19 @@ internal static unsafe partial class Native
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool GetVolumePathName(string fileName, char* volumePathName, uint bufferLength);
 
+    /// <summary>WinBase.h GetNamedPipeClientProcessId.</summary>
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetNamedPipeClientProcessId(SafePipeHandle pipe, out uint clientProcessId);
+
+    /// <summary>WinBase.h GetNamedPipeServerProcessId.</summary>
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetNamedPipeServerProcessId(SafePipeHandle pipe, out uint serverProcessId);
+
+    // winerror.h
+    public const int ERROR_CANCELLED = 1223;
+
     /// <summary>fileapi.h GetDiskFreeSpaceExW.</summary>
     [LibraryImport("kernel32.dll", EntryPoint = "GetDiskFreeSpaceExW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
     [return: MarshalAs(UnmanagedType.Bool)]

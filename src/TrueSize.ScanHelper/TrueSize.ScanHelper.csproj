@@ -1,9 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Implemented in phase 5. -->
+  <!--
+    Elevated scan helper. Debug/Release builds are framework-dependent (used by tests and the PowerShell module);
+    "dotnet publish -r win-x64" produces a self-contained NativeAOT single executable.
+  -->
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
