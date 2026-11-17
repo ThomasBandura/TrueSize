@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- BenchmarkDotNet suite is added in phase 3. Phase 1: quick timing tool. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\TrueSize.Core\TrueSize.Core.csproj" />
+  </ItemGroup>
+
+</Project>
