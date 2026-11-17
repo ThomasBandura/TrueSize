@@ -1,5 +1,18 @@
 # TrueSize
 
+> [!CAUTION]
+> ## ⚠️ KI-generierter Code – vor Verwendung prüfen
+>
+> **Der Code dieses Projekts wurde vollständig von einer KI generiert** (Claude Code).
+>
+> - ❗ **Vor dem Kompilieren und Ausführen selbst prüfen.** Das gilt besonders für `TrueSize.ScanHelper`: Er läuft
+>   mit Adminrechten und liest das Volume roh.
+> - ❗ Die Werkzeuge lesen nur und löschen oder ändern keine Dateien. Trotzdem können Größenangaben falsch sein –
+>   **Entscheidungen zum Löschen nicht allein auf diese Werte stützen.**
+> - ❗ **Keine Haftung, keine Gewährleistung.** Nutzung auf eigenes Risiko; es gilt die [MIT-Lizenz](LICENSE).
+
+---
+
 Analyse der Speicherbelegung lokaler Laufwerke (NTFS und ReFS) unter Windows – mit korrekt berechneten Größen:
 
 - **Hardlinks werden einmal gezählt** (wählbar: erster Fund, anteilig oder separat ausgewiesen).
@@ -91,4 +104,5 @@ für lokale Laufwerke, Leerlauf-Timeout). Details: [docs/scanhelper.md](docs/sca
 
 ## Lizenz
 
-[MIT](LICENSE)
+[MIT](LICENSE) – die Software wird ohne jede Gewährleistung bereitgestellt („as is“), die Autoren haften nicht für
+Schäden aus ihrer Nutzung.
