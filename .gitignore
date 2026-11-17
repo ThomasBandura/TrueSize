@@ -4,3 +4,4 @@ obj/
 *.user
 BenchmarkDotNet.Artifacts/
 TestResults/
+tests/TrueSize.App.UiTests/results/

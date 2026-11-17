@@ -1,5 +1,6 @@
 using System.Management.Automation;
 using TrueSize.Core.Model;
+using TrueSize.Core.Presentation;
 using TrueSize.Core.Remote;
 using TrueSize.Core.Scanning;
 

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    WinUI 3 app, unpackaged and self-contained (Windows App SDK runtime included). Deliberately not MSIX:
+    raw volume access is blocked in packaged processes (observed with Microsoft Store PowerShell), and the
+    elevated TrueSize.ScanHelper is started via "runas". The app itself never runs elevated, so drag & drop
+    from Explorer keeps working.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>TrueSize.App</RootNamespace>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <Platforms>x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Generated WinUI/XAML code is not warning-free under the repository-wide TreatWarningsAsErrors. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2957" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TrueSize.Core\TrueSize.Core.csproj" />
+    <!-- Build order only: the helper is copied next to the app below. -->
+    <ProjectReference Include="..\TrueSize.ScanHelper\TrueSize.ScanHelper.csproj" ReferenceOutputAssembly="false" Private="false" />
+  </ItemGroup>
+
+  <!-- Ship TrueSize.ScanHelper next to the app (framework-dependent build; publish uses the NativeAOT build instead). -->
+  <Target Name="CopyScanHelper" AfterTargets="Build">
+    <PropertyGroup>
+      <ScanHelperOut>..\TrueSize.ScanHelper\bin\$(Configuration)\net10.0-windows\</ScanHelperOut>
+    </PropertyGroup>
+    <ItemGroup>
+      <ScanHelperFiles Include="$(ScanHelperOut)TrueSize.ScanHelper.exe;$(ScanHelperOut)TrueSize.ScanHelper.dll;$(ScanHelperOut)TrueSize.ScanHelper.runtimeconfig.json;$(ScanHelperOut)TrueSize.ScanHelper.deps.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ScanHelperFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

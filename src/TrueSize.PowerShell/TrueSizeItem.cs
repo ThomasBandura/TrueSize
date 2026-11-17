@@ -1,5 +1,4 @@
-using System.Globalization;
-using System.Text;
+using TrueSize.Core.Presentation;
 using TrueSize.Core.Model;
 
 namespace TrueSize.PowerShell;
@@ -42,52 +41,7 @@ public sealed class TrueSizeItem
     public required NodeFlags Flags { get; init; }
 
     /// <summary>Short markers: D dir, J junction, L symlink, H hard link, X links outside, C cloud, S sparse, Z compressed, A ADS, ? reparse tag unknown, ! access error.</summary>
-    public string Markers => GetMarkers(Flags);
+    public string Markers => NodeMarkers.Get(Flags);
 
     public override string ToString() => FullName;
-
-    internal static string GetMarkers(NodeFlags f)
-    {
-        var sb = new StringBuilder(8);
-        Add('J', NodeFlags.Junction);
-        Add('L', NodeFlags.Symlink);
-        Add('H', NodeFlags.Hardlink);
-        Add('X', NodeFlags.ExternalLinks);
-        Add('C', NodeFlags.CloudPlaceholder);
-        Add('S', NodeFlags.Sparse);
-        Add('Z', NodeFlags.Compressed | NodeFlags.Wof);
-        Add('A', NodeFlags.AlternateStreams);
-        Add('?', NodeFlags.ReparseTagUnknown);
-        Add('!', NodeFlags.AccessDenied | NodeFlags.Error);
-        return sb.ToString();
-
-        void Add(char c, NodeFlags mask)
-        {
-            if ((f & mask) != 0)
-            {
-                sb.Append(c);
-            }
-        }
-    }
-}
-
-/// <summary>Human-readable sizes for the format view, e.g. "1.5 GB" (binary units, invariant culture).</summary>
-public static class SizeFormatter
-{
-    private static readonly string[] Units = ["B", "KB", "MB", "GB", "TB", "PB"];
-
-    public static string Format(long bytes)
-    {
-        double value = bytes;
-        int unit = 0;
-        while (Math.Abs(value) >= 1024 && unit < Units.Length - 1)
-        {
-            value /= 1024;
-            unit++;
-        }
-
-        return unit == 0
-            ? bytes.ToString(CultureInfo.InvariantCulture) + " B"
-            : value.ToString(value >= 100 ? "F0" : "F1", CultureInfo.InvariantCulture) + " " + Units[unit];
-    }
 }

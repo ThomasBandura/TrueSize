@@ -19,9 +19,9 @@
         <TableRowEntries>
           <TableRowEntry>
             <TableColumnItems>
-              <TableColumnItem><ScriptBlock>[TrueSize.PowerShell.SizeFormatter]::Format($_.Allocated)</ScriptBlock></TableColumnItem>
-              <TableColumnItem><ScriptBlock>[TrueSize.PowerShell.SizeFormatter]::Format($_.Size)</ScriptBlock></TableColumnItem>
-              <TableColumnItem><ScriptBlock>[TrueSize.PowerShell.SizeFormatter]::Format($_.Freeable)</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>[TrueSize.Core.Presentation.SizeFormatter]::Format($_.Allocated)</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>[TrueSize.Core.Presentation.SizeFormatter]::Format($_.Size)</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>[TrueSize.Core.Presentation.SizeFormatter]::Format($_.Freeable)</ScriptBlock></TableColumnItem>
               <TableColumnItem><ScriptBlock>$_.Percent.ToString('F1', [cultureinfo]::InvariantCulture)</ScriptBlock></TableColumnItem>
               <TableColumnItem><ScriptBlock>if ($_.IsDirectory) { $_.Files.ToString('N0') } else { '' }</ScriptBlock></TableColumnItem>
               <TableColumnItem><ScriptBlock>if ($_.IsDirectory) { 'D' + $_.Markers } else { $_.Markers }</ScriptBlock></TableColumnItem>

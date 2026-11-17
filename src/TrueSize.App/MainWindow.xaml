@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="TrueSize.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TrueSize.App"
+    xmlns:vm="using:TrueSize.App.ViewModels"
+    Title="TrueSize">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid
+        x:Name="Root"
+        AutomationProperties.AutomationId="DropTarget"
+        Padding="24,16,24,12"
+        AllowDrop="True"
+        Background="Transparent"
+        DragOver="Root_DragOver"
+        Drop="Root_Drop"
+        RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBox
+                x:Name="PathBox"
+                AutomationProperties.AutomationId="PathBox"
+                AutomationProperties.Name="Ordner"
+                KeyDown="PathBox_KeyDown"
+                PlaceholderText="Ordner, z. B. C:\ oder D:\Projekte"
+                Text="{x:Bind ViewModel.Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <Button
+                Grid.Column="1"
+                AutomationProperties.AutomationId="BrowseButton"
+                AutomationProperties.Name="Ordner auswählen"
+                Click="Browse_Click"
+                ToolTipService.ToolTip="Ordner auswählen">
+                <FontIcon Glyph="&#xED25;" />
+            </Button>
+
+            <ComboBox
+                Grid.Column="2"
+                AutomationProperties.AutomationId="HardlinkModeBox"
+                AutomationProperties.Name="Hardlinks"
+                ItemsSource="{x:Bind vm:MainViewModel.HardlinkModes}"
+                SelectedIndex="{x:Bind ViewModel.HardlinkModeIndex, Mode=TwoWay}"
+                ToolTipService.ToolTip="Wie Hardlinks gezählt werden" />
+
+            <CheckBox
+                Grid.Column="3"
+                MinWidth="0"
+                AutomationProperties.AutomationId="ElevatedScanBox"
+                Content="Schnell (Admin)"
+                IsChecked="{x:Bind ViewModel.UseElevatedScan, Mode=TwoWay}"
+                ToolTipService.ToolTip="MFT-Scan mit Adminrechten (NTFS). Einmalige Bestätigung pro Sitzung; die App selbst bleibt ohne Adminrechte." />
+
+            <Button
+                Grid.Column="4"
+                AutomationProperties.AutomationId="ScanButton"
+                Command="{x:Bind ViewModel.ScanCommand}"
+                Content="Scannen"
+                Style="{StaticResource AccentButtonStyle}" />
+
+            <Button
+                Grid.Column="5"
+                AutomationProperties.AutomationId="CancelButton"
+                Command="{x:Bind ViewModel.CancelCommand}"
+                Content="Abbrechen" />
+        </Grid>
+
+        <!-- Progress and messages -->
+        <StackPanel Grid.Row="1" Spacing="8">
+            <ProgressBar
+                AutomationProperties.AutomationId="ScanProgress"
+                IsIndeterminate="True"
+                Visibility="{x:Bind local:MainWindow.Visible(ViewModel.IsScanning), Mode=OneWay}" />
+            <TextBlock
+                AutomationProperties.AutomationId="StatusText"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
+                Visibility="{x:Bind local:MainWindow.Visible(ViewModel.IsScanning), Mode=OneWay}" />
+            <InfoBar
+                AutomationProperties.AutomationId="InfoBar"
+                IsOpen="{x:Bind ViewModel.IsInfoOpen, Mode=TwoWay}"
+                Message="{x:Bind ViewModel.InfoMessage, Mode=OneWay}"
+                Severity="{x:Bind ViewModel.InfoSeverity, Mode=OneWay}"
+                Title="{x:Bind ViewModel.InfoTitle, Mode=OneWay}" />
+        </StackPanel>
+
+        <!-- Column headers (click to sort) -->
+        <Grid
+            Grid.Row="2"
+            Padding="12,0,28,0"
+            ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="{StaticResource SizeColumnWidth}" />
+                <ColumnDefinition Width="{StaticResource SizeColumnWidth}" />
+                <ColumnDefinition Width="{StaticResource SizeColumnWidth}" />
+                <ColumnDefinition Width="{StaticResource ShareColumnWidth}" />
+                <ColumnDefinition Width="{StaticResource FilesColumnWidth}" />
+                <ColumnDefinition Width="{StaticResource MarkersColumnWidth}" />
+            </Grid.ColumnDefinitions>
+            <HyperlinkButton AutomationProperties.AutomationId="SortName" Command="{x:Bind ViewModel.SortByCommand}" CommandParameter="Name" Content="Name" />
+            <HyperlinkButton Grid.Column="1" HorizontalAlignment="Right" AutomationProperties.AutomationId="SortSize" Command="{x:Bind ViewModel.SortByCommand}" CommandParameter="Size" Content="Größe" ToolTipService.ToolTip="Logische Größe" />
+            <HyperlinkButton Grid.Column="2" HorizontalAlignment="Right" AutomationProperties.AutomationId="SortAllocated" Command="{x:Bind ViewModel.SortByCommand}" CommandParameter="Allocated" Content="Belegt" ToolTipService.ToolTip="Tatsächlich belegter Platz, Hardlinks einmal gezählt" />
+            <HyperlinkButton Grid.Column="3" HorizontalAlignment="Right" AutomationProperties.AutomationId="SortFreeable" Command="{x:Bind ViewModel.SortByCommand}" CommandParameter="Freeable" Content="Freigebbar" ToolTipService.ToolTip="Platz, der beim Löschen frei wird (Hardlinks außerhalb zählen nicht)" />
+            <TextBlock Grid.Column="4" Padding="0,5" VerticalAlignment="Center" Text="Anteil" />
+            <HyperlinkButton Grid.Column="5" HorizontalAlignment="Right" AutomationProperties.AutomationId="SortFiles" Command="{x:Bind ViewModel.SortByCommand}" CommandParameter="Files" Content="Dateien" />
+            <TextBlock Grid.Column="6" Padding="0,5" VerticalAlignment="Center" Text="Kennz." ToolTipService.ToolTip="J Junction · L Symlink · H Hardlink · X Links außerhalb · C Cloud · S Sparse · Z komprimiert · A Datenströme · ? Typ unbekannt · ! Fehler" />
+        </Grid>
+
+        <!-- Rows: flat virtualized list with indentation and lazy expansion (no TreeView) -->
+        <Border
+            Grid.Row="3"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="{StaticResource OverlayCornerRadius}">
+            <Grid>
+                <ScrollViewer
+                    x:Name="RowScroller"
+                    AutomationProperties.AutomationId="RowList"
+                    HorizontalScrollMode="Disabled"
+                    IsVerticalScrollChainingEnabled="False">
+                    <ItemsRepeater x:Name="RowRepeater" ItemsSource="{x:Bind ViewModel.Rows}">
+                        <ItemsRepeater.Layout>
+                            <StackLayout />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:TreeRowViewModel">
+                                <Grid
+                                    Height="32"
+                                    Padding="12,0"
+                                    AutomationProperties.Name="{x:Bind AutomationName}"
+                                    DataContext="{x:Bind}"
+                                    Background="Transparent"
+                                    ColumnSpacing="8"
+                                    DoubleTapped="Row_DoubleTapped"
+                                    ToolTipService.ToolTip="{x:Bind FullPath}">
+                                    <Grid.ContextFlyout>
+                                        <MenuFlyout Opening="RowMenu_Opening">
+                                            <MenuFlyoutItem Click="ShowInExplorer_Click" Text="Im Explorer anzeigen">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon Glyph="&#xEC50;" />
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                            <MenuFlyoutItem Click="CopyPath_Click" Text="Pfad kopieren">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon Glyph="&#xE8C8;" />
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                        </MenuFlyout>
+                                    </Grid.ContextFlyout>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="{StaticResource SizeColumnWidth}" />
+                                        <ColumnDefinition Width="{StaticResource SizeColumnWidth}" />
+                                        <ColumnDefinition Width="{StaticResource SizeColumnWidth}" />
+                                        <ColumnDefinition Width="{StaticResource ShareColumnWidth}" />
+                                        <ColumnDefinition Width="{StaticResource FilesColumnWidth}" />
+                                        <ColumnDefinition Width="{StaticResource MarkersColumnWidth}" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Margin="{x:Bind Indent}" Orientation="Horizontal" Spacing="4">
+                                        <!-- Fixed-width slot keeps names aligned; files have no button (no disabled box). -->
+                                        <Grid Width="28">
+                                            <Button
+                                                Width="28"
+                                                Height="28"
+                                                Padding="0"
+                                                AutomationProperties.Name="Auf- oder zuklappen"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="Toggle_Click"
+                                                Visibility="{x:Bind local:MainWindow.VisibleIf(CanExpand)}">
+                                                <FontIcon FontSize="12" Glyph="{x:Bind Chevron}" />
+                                            </Button>
+                                        </Grid>
+                                        <FontIcon
+                                            VerticalAlignment="Center"
+                                            FontSize="16"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Glyph="{x:Bind Icon}" />
+                                        <TextBlock VerticalAlignment="Center" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind SizeText}" />
+                                    <TextBlock Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind AllocatedText}" />
+                                    <TextBlock Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind FreeableText}" />
+                                    <Grid Grid.Column="4" VerticalAlignment="Center" ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="48" />
+                                        </Grid.ColumnDefinitions>
+                                        <ProgressBar VerticalAlignment="Center" Maximum="100" Value="{x:Bind Percent}" />
+                                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind PercentText}" />
+                                    </Grid>
+                                    <TextBlock Grid.Column="5" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind FilesText}" />
+                                    <TextBlock
+                                        Grid.Column="6"
+                                        VerticalAlignment="Center"
+                                        FontFamily="Consolas"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind Markers}"
+                                        ToolTipService.ToolTip="{x:Bind MarkersDescription}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </ScrollViewer>
+
+                <!-- Empty state -->
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="12"
+                    Visibility="{x:Bind local:MainWindow.Collapsed(ViewModel.HasResult), Mode=OneWay}">
+                    <FontIcon FontSize="48" Foreground="{ThemeResource TextFillColorTertiaryBrush}" Glyph="&#xEDA2;" />
+                    <TextBlock HorizontalAlignment="Center" Style="{StaticResource SubtitleTextBlockStyle}" Text="Ordner hierher ziehen" />
+                    <TextBlock HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="oder Pfad eingeben und „Scannen“ wählen" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Summary -->
+        <TextBlock
+            Grid.Row="4"
+            AutomationProperties.AutomationId="SummaryText"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="{x:Bind ViewModel.SummaryText, Mode=OneWay}"
+            TextTrimming="CharacterEllipsis" />
+    </Grid>
+</Window>
