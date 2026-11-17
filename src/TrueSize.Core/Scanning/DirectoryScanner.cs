@@ -43,7 +43,8 @@ public sealed class DirectoryScanner : IVolumeScanner
             volume.FileSystem,
             Name,
             LinkCountsExact: options.ResolveLinkCounts && run.UnknownLinkCounts == 0,
-            AlternateStreamsIncluded: options.IncludeAlternateStreams));
+            AlternateStreamsIncluded: options.IncludeAlternateStreams,
+            Volume: volume));
         tree.Aggregate(options.HardlinkMode);
         return new ScanResult(tree, run.Errors.ToArray(), sw.Elapsed);
     }

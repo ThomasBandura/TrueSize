@@ -77,7 +77,8 @@ public sealed class GetTrueSizeCommand : PSCmdlet
     {
         string root = ResolvePath(Path ?? SessionState.Path.CurrentFileSystemLocation.ProviderPath);
         var choice = ScannerSelector.Select(root);
-        if (!choice.IsElevated)
+        // Only warn when elevation would actually help (NTFS); on ReFS the directory scanner is the only scanner.
+        if (!choice.IsElevated && choice.FastPathPossible)
         {
             WriteWarning(choice.Reason);
         }
@@ -116,6 +117,7 @@ public sealed class GetTrueSizeCommand : PSCmdlet
         ReportErrors(result);
         WriteVerbose($"{scanner.Name} scanner, {choice.Volume.FileSystem}: {result.Tree.GetFileCount(ScanTree.Root):N0} files, " +
                      $"{result.Tree.GetDirectoryCount(ScanTree.Root):N0} directories in {result.Duration.TotalSeconds:F2} s.");
+        ReportSharedAllocation(result.Tree, choice.Volume);
 
         if (Raw)
         {
@@ -223,6 +225,27 @@ public sealed class GetTrueSizeCommand : PSCmdlet
         }
 
         WriteWarning($"{result.Errors.Count:N0} item(s) could not be read and are counted with partial or zero size. Use -Verbose for details.");
+    }
+
+    // Block cloning / deduplication cannot be attributed per file; report only what is provable at volume level.
+    private void ReportSharedAllocation(ScanTree tree, VolumeInfo volume)
+    {
+        if (!volume.CanShareClusters)
+        {
+            return;
+        }
+
+        long? shared = tree.MinimumSharedAllocation;
+        if (shared > 0)
+        {
+            WriteWarning($"At least {SizeFormatter.Format(shared.Value)} of 'Allocated' is shared between files (ReFS block cloning or " +
+                         "deduplication) and counted once per file. Freeable may be overstated for cloned files.");
+        }
+        else
+        {
+            WriteVerbose($"{volume.FileSystem}: clusters can be shared between files (block cloning); Allocated counts them per file. " +
+                         "Sharing is not attributable to individual files.");
+        }
     }
 
     private void EmitFlat(ScanTree tree)

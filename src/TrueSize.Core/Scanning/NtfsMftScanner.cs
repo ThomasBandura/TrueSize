@@ -77,7 +77,7 @@ public sealed class NtfsMftScanner : IVolumeScanner
         BuildTree(table, children, builder, rootNode, rootRecord, options, progress, cancellationToken);
 
         var tree = builder.Build(new ScanTreeInfo(
-            root, volume.Root, volume.SerialNumber, volume.FileSystem, Name, LinkCountsExact: true, options.IncludeAlternateStreams));
+            root, volume.Root, volume.SerialNumber, volume.FileSystem, Name, LinkCountsExact: true, options.IncludeAlternateStreams, volume));
         tree.Aggregate(options.HardlinkMode);
         LastTimings = new MftTimings(openTime, readTime, indexTime, phase.Elapsed - beforeIndex - indexTime, mft.RecordCount, mft.RecordSize,
             table.NonResidentReparse.Count, reparseReads, sw.Elapsed, table.FileNameTagMismatches);

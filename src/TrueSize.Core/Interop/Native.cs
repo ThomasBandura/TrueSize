@@ -71,6 +71,16 @@ internal static unsafe partial class Native
     public static readonly uint FSCTL_SET_COMPRESSION = CtlCode(FILE_DEVICE_FILE_SYSTEM, 16, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA);
     public static readonly uint FSCTL_SET_SPARSE = CtlCode(FILE_DEVICE_FILE_SYSTEM, 49, METHOD_BUFFERED, FILE_SPECIAL_ACCESS);
     public static readonly uint FSCTL_GET_NTFS_VOLUME_DATA = CtlCode(FILE_DEVICE_FILE_SYSTEM, 25, METHOD_BUFFERED, FILE_ANY_ACCESS);
+    private const uint METHOD_NEITHER = 3;
+    public static readonly uint FSCTL_ENUM_USN_DATA = CtlCode(FILE_DEVICE_FILE_SYSTEM, 44, METHOD_NEITHER, FILE_ANY_ACCESS);
+
+    // winerror.h
+    public const int ERROR_JOURNAL_NOT_ACTIVE = 1179;
+
+    /// <summary>WinBase.h OpenFileById.</summary>
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    public static partial SafeFileHandle OpenFileById(
+        SafeFileHandle volumeHint, FILE_ID_DESCRIPTOR* fileId, uint desiredAccess, uint shareMode, nint securityAttributes, uint flagsAndAttributes);
 
     // winnt.h
     public const uint GENERIC_READ = 0x80000000;
@@ -112,6 +122,11 @@ internal static unsafe partial class Native
     [LibraryImport("kernel32.dll", EntryPoint = "GetVolumePathNameW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool GetVolumePathName(string fileName, char* volumePathName, uint bufferLength);
+
+    /// <summary>fileapi.h GetDiskFreeSpaceExW.</summary>
+    [LibraryImport("kernel32.dll", EntryPoint = "GetDiskFreeSpaceExW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetDiskFreeSpaceEx(string directoryName, out ulong freeBytesAvailableToCaller, out ulong totalNumberOfBytes, out ulong totalNumberOfFreeBytes);
 
     [LibraryImport("kernel32.dll", EntryPoint = "GetVolumeInformationW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -170,6 +185,30 @@ internal struct FILE_ID_128
 {
     public ulong Low;
     public ulong High;
+}
+
+/// <summary>winioctl.h MFT_ENUM_DATA_V1 (input of FSCTL_ENUM_USN_DATA).</summary>
+[StructLayout(LayoutKind.Sequential)]
+internal struct MFT_ENUM_DATA_V1
+{
+    public ulong StartFileReferenceNumber;
+    public long LowUsn;
+    public long HighUsn;
+    public ushort MinMajorVersion;
+    public ushort MaxMajorVersion;
+}
+
+/// <summary>WinBase.h FILE_ID_DESCRIPTOR with the FILE_ID_128 union member (Type = ExtendedFileIdType = 2).</summary>
+[StructLayout(LayoutKind.Sequential)]
+internal struct FILE_ID_DESCRIPTOR
+{
+    public const int ExtendedFileIdType = 2; // FILE_ID_TYPE: FileIdType, ObjectIdType, ExtendedFileIdType
+
+    public uint dwSize;
+    public int Type;
+
+    // Union { LARGE_INTEGER FileId; GUID ObjectId; FILE_ID_128 ExtendedFileId; } aligned to 8 bytes.
+    public FILE_ID_128 ExtendedFileId;
 }
 
 /// <summary>minwinbase.h OVERLAPPED (the Offset/OffsetHigh member of the union).</summary>

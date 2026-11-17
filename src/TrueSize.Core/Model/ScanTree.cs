@@ -7,7 +7,13 @@ public sealed record ScanTreeInfo(
     string FileSystem,
     string Scanner,
     bool LinkCountsExact,
-    bool AlternateStreamsIncluded);
+    bool AlternateStreamsIncluded,
+    Scanning.VolumeInfo? Volume = null)
+{
+    /// <summary>True if the scan covered the whole volume (root path is the volume root).</summary>
+    public bool IsVolumeRoot => string.Equals(
+        RootPath.TrimEnd('\\'), VolumeRoot.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
+}
 
 /// <summary>Read-only snapshot of one node with its aggregated values.</summary>
 public readonly record struct NodeView(
@@ -149,6 +155,25 @@ public sealed class ScanTree
         _linkCount[node]);
 
     public ChildEnumerable Children(int node) => new(this, node);
+
+    /// <summary>
+    /// Lower bound of allocated bytes that are shared between files (ReFS block cloning or deduplication) and therefore
+    /// counted more than once in Allocated. Only determinable for a whole-volume scan: if the per-file allocation exceeds
+    /// the space actually in use, the excess must be shared. Null when not determinable; 0 does not prove "no sharing",
+    /// because file system metadata can hide it. Never attributed to individual files.
+    /// </summary>
+    public long? MinimumSharedAllocation
+    {
+        get
+        {
+            if (Info.Volume is not { CanShareClusters: true, TotalBytes: > 0 } volume || !Info.IsVolumeRoot)
+            {
+                return null;
+            }
+
+            return Math.Max(0, GetTotalAllocated(Root) - volume.UsedBytes);
+        }
+    }
 
     public string GetPath(int node)
     {

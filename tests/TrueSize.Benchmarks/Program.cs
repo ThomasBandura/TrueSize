@@ -13,6 +13,12 @@ if (args.Contains("--bdn"))
     return;
 }
 
+if (args.Contains("--usn-probe"))
+{
+    TrueSize.Benchmarks.UsnProbe.Run(path, args.Contains("--enum-only"));
+    return;
+}
+
 if (args.Contains("--tags"))
 {
     // Histogram of reparse tags by tag and by the first two path levels below the scan root.

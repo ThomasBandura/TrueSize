@@ -124,7 +124,7 @@ public sealed class ReferenceScanner : IVolumeScanner
             }
         }
 
-        var tree = builder.Build(new ScanTreeInfo(root, volume.Root, volume.SerialNumber, volume.FileSystem, Name, LinkCountsExact: true, options.IncludeAlternateStreams));
+        var tree = builder.Build(new ScanTreeInfo(root, volume.Root, volume.SerialNumber, volume.FileSystem, Name, LinkCountsExact: true, options.IncludeAlternateStreams, volume));
         tree.Aggregate(options.HardlinkMode);
         return new ScanResult(tree, errors, sw.Elapsed);
     }

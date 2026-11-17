@@ -85,6 +85,23 @@ public sealed class ScanTreeTests
         Assert.Equal(10, tree.GetTotalSize(ScanTree.Root));
     }
 
+    [Theory]
+    [InlineData("ReFS", @"X:\", 10_000, 9_000, 1_000L)]   // whole volume, over-counted by 1000 -> at least 1000 shared
+    [InlineData("ReFS", @"X:\", 10_000, 12_000, 0L)]      // metadata may hide sharing: 0, not "none"
+    [InlineData("ReFS", @"X:\sub", 10_000, 9_000, null)]  // subtree: not determinable
+    [InlineData("NTFS", @"X:\", 10_000, 9_000, null)]     // NTFS: no cluster sharing
+    public void MinimumSharedAllocation_OnlyForWholeReFSVolume(string fs, string root, long allocated, long used, long? expected)
+    {
+        var builder = new ScanTreeBuilder();
+        builder.AddRoot(root, default);
+        Add(builder, 0, ("f", NodeFlags.None, allocated, 1, 1));
+        var volume = new Scanning.VolumeInfo(@"X:\", 1, fs, TotalBytes: 100_000, FreeBytes: 100_000 - used);
+        var tree = builder.Build(new ScanTreeInfo(root, @"X:\", 1, fs, "test", true, false, volume));
+        tree.Aggregate(HardlinkMode.FirstFound);
+
+        Assert.Equal(expected, tree.MinimumSharedAllocation);
+    }
+
     [Fact]
     public void NamePool_SpansMultipleChunks()
     {

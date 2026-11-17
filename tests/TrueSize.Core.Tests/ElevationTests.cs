@@ -32,7 +32,7 @@ public sealed class ElevationTests
     }
 
     [Fact]
-    public void Selector_UsesDirectoryScannerOnReFS_UntilPhase4()
+    public void Selector_UsesDirectoryScannerOnReFS_WithoutFastPathHint()
     {
         string refsPath = AppContext.BaseDirectory;
         if (VolumeInfo.FromPath(refsPath).FileSystem != "ReFS") return;
@@ -40,5 +40,16 @@ public sealed class ElevationTests
         var choice = ScannerSelector.Select(refsPath);
         Assert.IsType<DirectoryScanner>(choice.Scanner);
         Assert.False(choice.IsFastPath);
+        Assert.False(choice.FastPathPossible);
+        Assert.True(choice.Volume.CanShareClusters);
+    }
+
+    [Fact]
+    public void VolumeInfo_ReportsCapacity()
+    {
+        var volume = VolumeInfo.FromPath(Path.GetTempPath());
+        Assert.True(volume.TotalBytes > 0);
+        Assert.InRange(volume.FreeBytes, 0, volume.TotalBytes);
+        Assert.False(volume.CanShareClusters); // %TEMP% is on NTFS here
     }
 }
