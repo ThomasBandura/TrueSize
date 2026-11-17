@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+      <Name>TrueSizeItem</Name>
+      <ViewSelectedBy>
+        <TypeName>TrueSize.PowerShell.TrueSizeItem</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>Allocated</Label><Width>10</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Size</Label><Width>10</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Freeable</Label><Width>10</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>%</Label><Width>6</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Files</Label><Width>10</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Flags</Label><Width>5</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Name</Label></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><ScriptBlock>[TrueSize.PowerShell.SizeFormatter]::Format($_.Allocated)</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>[TrueSize.PowerShell.SizeFormatter]::Format($_.Size)</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>[TrueSize.PowerShell.SizeFormatter]::Format($_.Freeable)</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>$_.Percent.ToString('F1', [cultureinfo]::InvariantCulture)</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.IsDirectory) { $_.Files.ToString('N0') } else { '' }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.IsDirectory) { 'D' + $_.Markers } else { $_.Markers }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><PropertyName>DisplayName</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+  </ViewDefinitions>
+</Configuration>

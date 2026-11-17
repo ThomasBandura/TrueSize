@@ -1,9 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Implemented in phase 2. -->
+  <!--
+    Binary module for PowerShell 7.6+ (7.6 runs on .NET 10, 7.7 on .NET 11).
+    Compiled against SMA 7.6 so the module loads in both. SMA is provided by the host and never shipped.
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>TrueSize.PowerShell</AssemblyName>
+    <RootNamespace>TrueSize.PowerShell</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management.Automation" Version="7.6.10" PrivateAssets="all" ExcludeAssets="runtime" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\TrueSize.Core\TrueSize.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="TrueSize.psd1" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="TrueSize.Format.ps1xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
