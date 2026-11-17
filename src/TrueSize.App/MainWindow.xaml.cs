@@ -31,9 +31,8 @@ public sealed partial class MainWindow : Window
 
     public MainViewModel ViewModel { get; }
 
-    public static Visibility Visible(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
 
-    public static Visibility Collapsed(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+    public static Visibility CollapsedIf(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
     // Width/height for the AppWindow are physical pixels.
     [LibraryImport("user32.dll")]

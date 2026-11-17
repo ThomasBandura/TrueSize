@@ -91,12 +91,12 @@
             <ProgressBar
                 AutomationProperties.AutomationId="ScanProgress"
                 IsIndeterminate="True"
-                Visibility="{x:Bind local:MainWindow.Visible(ViewModel.IsScanning), Mode=OneWay}" />
+                Visibility="{x:Bind local:MainWindow.VisibleIf(ViewModel.IsScanning), Mode=OneWay}" />
             <TextBlock
                 AutomationProperties.AutomationId="StatusText"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                 Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
-                Visibility="{x:Bind local:MainWindow.Visible(ViewModel.IsScanning), Mode=OneWay}" />
+                Visibility="{x:Bind local:MainWindow.VisibleIf(ViewModel.IsScanning), Mode=OneWay}" />
             <InfoBar
                 AutomationProperties.AutomationId="InfoBar"
                 IsOpen="{x:Bind ViewModel.IsInfoOpen, Mode=TwoWay}"
@@ -233,7 +233,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Spacing="12"
-                    Visibility="{x:Bind local:MainWindow.Collapsed(ViewModel.HasResult), Mode=OneWay}">
+                    Visibility="{x:Bind local:MainWindow.CollapsedIf(ViewModel.HasResult), Mode=OneWay}">
                     <FontIcon FontSize="48" Foreground="{ThemeResource TextFillColorTertiaryBrush}" Glyph="&#xEDA2;" />
                     <TextBlock HorizontalAlignment="Center" Style="{StaticResource SubtitleTextBlockStyle}" Text="Ordner hierher ziehen" />
                     <TextBlock HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="oder Pfad eingeben und „Scannen“ wählen" />
